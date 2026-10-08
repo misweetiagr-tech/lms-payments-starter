@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Services\Invoicing\FakeInvoiceGateway;
+use App\Services\Invoicing\InvoiceGateway;
 use App\Services\Payments\FakeGateway;
 use App\Services\Payments\PaymentGateway;
 use Illuminate\Support\ServiceProvider;
@@ -13,6 +15,9 @@ class AppServiceProvider extends ServiceProvider
     {
         // One shared instance so tests and tinker can drive the same fake.
         $this->app->singleton(FakeGateway::class);
+
+        $this->app->singleton(FakeInvoiceGateway::class);
+        $this->app->bind(InvoiceGateway::class, FakeInvoiceGateway::class);
 
         $this->app->bind(PaymentGateway::class, function ($app) {
             return match (config('payments.gateway')) {

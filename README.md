@@ -15,6 +15,10 @@ Everything here is written from scratch with **fake data and a fake payment gate
 | Server-side guard | `SubscriptionController::store` | A hand-made request cannot split a full-payment course; amounts come from the server. |
 | Resource pool with locking | `HostAllocator` | Picks a free host inside a transaction with `lockForUpdate`. Back-to-back slots do not clash. |
 | Section + action permissions | `User::hasPermission`, `EnsurePermission` | `perm:enrollments,view` middleware. The old flat token keeps full access so nobody is locked out. |
+| Accounting integration (Zoho Books style) | `InvoiceService`, `invoices:backfill` | Contact first, then draft invoice. Invoice-only tooling skips students with no contact, so repair is two steps. Dropdown values that are not real options are dropped, not fatal. Dry run by default, `--commit` to write. |
+| Results import | `ResultImporter` | A sheet supplies only enrollment number, subject code and marks. Student, course and valid subjects are re-derived on the server. Per-row errors, `absent` support, re-import updates instead of duplicating. |
+| Admission drafts | `AdmissionDraftController` | A salesperson creates a draft and sees only their own. Nothing becomes a real student until an admin approves, and approval is refused until payment is confirmed. Approving twice is harmless. |
+| Token bridge between two backends | `VerifyNodeJwt`, `node-auth/` | One login for both. The Node service issues an HS256 access token and Laravel verifies it under `/api/app`. Refresh tokens, expired, wrongly signed and unknown-user tokens are rejected, and an unconfigured bridge fails closed. |
 
 ## Quick start
 
@@ -63,7 +67,9 @@ Requires PHP 8.2+ and the `pdo_sqlite` extension. No account or API key is neede
 
 ## Tests
 
-`php artisan test` runs 29 tests covering the cases above: bad signature, duplicate event, same cycle with a different id, completion, unknown subscription, missing secret, reconcile twice, late webhook after reconcile, dry run, plan rounding and date overflow, host overlap and back-to-back slots, and permission checks.
+`php artisan test` runs 57 tests. Besides the payment cases (bad signature, duplicate event, same cycle with a different id, reconcile twice, late webhook after reconcile, plan rounding, host overlap), they cover the invoice repair, result import validation, the draft approval rules and the token bridge.
+
+`cd node-auth && npm install && npm test` runs the 4 Node token tests (wrong secret and unsigned tokens are rejected).
 
 ## Limits and what I would improve
 
@@ -75,4 +81,6 @@ Requires PHP 8.2+ and the `pdo_sqlite` extension. No account or API key is neede
 
 ## Stack
 
-PHP 8.2, Laravel 12, SQLite (swap for MySQL in `.env`), PHPUnit.
+PHP 8.2, Laravel 12, SQLite (swap for MySQL in `.env`), PHPUnit, firebase/php-jwt, and a small Node service (`node-auth/`) using jsonwebtoken.
+
+The accounting and payment providers are faked behind interfaces (`InvoiceGateway`, `PaymentGateway`). Nothing here talks to a real vendor.

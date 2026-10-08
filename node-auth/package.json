@@ -1,0 +1,14 @@
+{
+  "name": "node-auth-sample",
+  "version": "1.0.0",
+  "description": "Tiny Node auth service that issues the JWT the Laravel app verifies (sample, fake users)",
+  "private": true,
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "jsonwebtoken": "^9.0.2"
+  }
+}

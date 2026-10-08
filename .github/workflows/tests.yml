@@ -27,3 +27,9 @@ jobs:
 
       - name: Run tests
         run: php artisan test
+
+      - name: Node token tests
+        working-directory: node-auth
+        run: |
+          npm install
+          npm test
