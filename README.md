@@ -36,6 +36,23 @@ php artisan test
 
 Requires PHP 8.2+ and the `pdo_sqlite` extension. No account or API key is needed.
 
+## Run everything with Docker
+
+```bash
+docker compose up --build
+```
+
+| Service | URL | What it is |
+|---|---|---|
+| react | http://localhost:5173 | Student dashboard (sign in with user id 3 and code 123456) |
+| app | http://localhost:8000 | Laravel API |
+| node-auth | http://localhost:4000 | Token service |
+| scheduler | none | Runs the hourly `payments:reconcile` safety net |
+
+The first start migrates and seeds fake demo data into a SQLite file kept in a Docker volume, so restarts never create duplicates. Remove it with `docker compose down -v`. The secrets in `docker-compose.yml` are local placeholders only; set `NODE_JWT_SECRET` and `PAYMENTS_WEBHOOK_SECRET` in your shell to override them.
+
+The CI workflow builds these images, runs the PHP tests inside the container and smoke-tests login through all three services.
+
 ## Try the flow
 
 1. Start the server: `php artisan serve`

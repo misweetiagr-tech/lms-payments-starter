@@ -1,0 +1,54 @@
+# One command runs the whole sample: docker compose up --build
+#   React dashboard  http://localhost:5173
+#   Laravel API      http://localhost:8000
+#   Node auth        http://localhost:4000
+# Everything is fake demo data. The secrets below are placeholders for local use only.
+
+x-secrets: &secrets
+  NODE_JWT_SECRET: ${NODE_JWT_SECRET:-change-me-locally-use-at-least-32-characters}
+  PAYMENTS_WEBHOOK_SECRET: ${PAYMENTS_WEBHOOK_SECRET:-change-me-locally}
+
+services:
+  app:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      <<: *secrets
+      DB_DATABASE: /data/database.sqlite
+    volumes:
+      - app-data:/data
+
+  # Runs the hourly payments:reconcile safety net (same image, same database).
+  scheduler:
+    build: .
+    command: ["php", "artisan", "schedule:work"]
+    environment:
+      <<: *secrets
+      DB_DATABASE: /data/database.sqlite
+      SKIP_SETUP: "1"
+    volumes:
+      - app-data:/data
+    depends_on:
+      - app
+
+  node-auth:
+    build: ./node-auth
+    ports:
+      - "4000:4000"
+    environment:
+      NODE_JWT_SECRET: ${NODE_JWT_SECRET:-change-me-locally-use-at-least-32-characters}
+
+  react:
+    build: ./react-dashboard
+    ports:
+      - "5173:5173"
+    environment:
+      NODE_AUTH_URL: http://node-auth:4000
+      API_URL: http://app:8000
+    depends_on:
+      - app
+      - node-auth
+
+volumes:
+  app-data:
