@@ -7,7 +7,7 @@ It shows the **bridge** idea: one login, two backends, nothing existing rewritte
 cd node-auth
 npm install
 npm test                                 # token tests
-NODE_JWT_SECRET=change-me-locally npm start
+NODE_JWT_SECRET=change-me-locally-use-at-least-32-characters npm start
 ```
 
 ```bash
@@ -23,7 +23,7 @@ curl localhost:8000/api/app/me -H "Authorization: Bearer <access_token>"
 
 Rules both sides follow:
 
-- HS256 with a shared secret (`NODE_JWT_SECRET` in both places).
+- HS256 with a shared secret (`NODE_JWT_SECRET` in both places). Use at least 32 characters: the PHP JWT library refuses shorter keys.
 - `sub` is the user id; `token_type` is `access` or `refresh`.
 - Access tokens last 30 minutes. A refresh token only works at `/auth/refresh`, and an access token never does.
 - The algorithm is pinned, so unsigned or re-signed tokens are rejected.

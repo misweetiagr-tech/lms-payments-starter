@@ -72,6 +72,22 @@ class NodeJwtBridgeTest extends TestCase
         $this->callMe($this->token(['sub' => 9999, 'token_type' => 'access']))->assertStatus(401);
     }
 
+    public function test_a_student_only_sees_their_own_enrollments(): void
+    {
+        $me = User::factory()->create();
+        $someoneElse = User::factory()->create();
+        $mine = \App\Models\Course::create(['title' => 'Mine', 'price' => 100]);
+        $theirs = \App\Models\Course::create(['title' => 'Theirs', 'price' => 100]);
+        \App\Models\Enrollment::create(['user_id' => $me->id, 'course_id' => $mine->id, 'status' => 'active']);
+        \App\Models\Enrollment::create(['user_id' => $someoneElse->id, 'course_id' => $theirs->id, 'status' => 'active']);
+
+        $response = $this->getJson('/api/app/enrollments', [
+            'Authorization' => 'Bearer '.$this->token(['sub' => $me->id, 'token_type' => 'access']),
+        ])->assertOk();
+
+        $this->assertSame(['Mine'], array_column($response->json(), 'course'));
+    }
+
     public function test_unconfigured_bridge_fails_closed(): void
     {
         config(['nodeauth.secret' => '']);

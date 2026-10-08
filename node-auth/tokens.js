@@ -3,7 +3,7 @@
 const jwt = require('jsonwebtoken');
 
 // Must be the same value as NODE_JWT_SECRET in the Laravel .env.
-const SECRET = process.env.NODE_JWT_SECRET || 'change-me-locally';
+const SECRET = process.env.NODE_JWT_SECRET || 'change-me-locally-use-at-least-32-characters';
 
 /** Short-lived token the other backends accept. `sub` is the user id in the shared database. */
 function signAccess(userId) {

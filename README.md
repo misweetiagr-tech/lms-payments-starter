@@ -19,6 +19,7 @@ Everything here is written from scratch with **fake data and a fake payment gate
 | Results import | `ResultImporter` | A sheet supplies only enrollment number, subject code and marks. Student, course and valid subjects are re-derived on the server. Per-row errors, `absent` support, re-import updates instead of duplicating. |
 | Admission drafts | `AdmissionDraftController` | A salesperson creates a draft and sees only their own. Nothing becomes a real student until an admin approves, and approval is refused until payment is confirmed. Approving twice is harmless. |
 | Token bridge between two backends | `VerifyNodeJwt`, `node-auth/` | One login for both. The Node service issues an HS256 access token and Laravel verifies it under `/api/app`. Refresh tokens, expired, wrongly signed and unknown-user tokens are rejected, and an unconfigured bridge fails closed. |
+| React client for two backends | `react-dashboard/src/api/client.ts` | One axios client for Node auth and one for Laravel. On a 401 it refreshes once (shared by simultaneous requests) and retries once, and ends the session if refresh fails. Typed, with loading, error and empty states. |
 
 ## Quick start
 
@@ -71,6 +72,8 @@ Requires PHP 8.2+ and the `pdo_sqlite` extension. No account or API key is neede
 
 `cd node-auth && npm install && npm test` runs the 4 Node token tests (wrong secret and unsigned tokens are rejected).
 
+`cd react-dashboard && npm install && npm test` runs 5 tests for the React API client (token header, refresh on 401, one shared refresh for simultaneous failures, session ends on a rejected refresh, no infinite retry).
+
 ## Limits and what I would improve
 
 - Tests run on SQLite, which ignores row locks, so the `lockForUpdate` concurrency path is **not** proven by the tests. I would add a MySQL job in CI and a parallel-request test.
@@ -81,6 +84,6 @@ Requires PHP 8.2+ and the `pdo_sqlite` extension. No account or API key is neede
 
 ## Stack
 
-PHP 8.2, Laravel 12, SQLite (swap for MySQL in `.env`), PHPUnit, firebase/php-jwt, and a small Node service (`node-auth/`) using jsonwebtoken.
+PHP 8.2, Laravel 12, SQLite (swap for MySQL in `.env`), PHPUnit, firebase/php-jwt, a small Node service (`node-auth/`) using jsonwebtoken, and a React 19 + TypeScript + Vite screen (`react-dashboard/`).
 
 The accounting and payment providers are faked behind interfaces (`InvoiceGateway`, `PaymentGateway`). Nothing here talks to a real vendor.

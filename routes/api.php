@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\EnrollmentController;
 use App\Http\Controllers\Api\ResultImportController;
 use App\Http\Controllers\Api\SubscriptionController;
 use App\Http\Controllers\Api\WebhookController;
+use App\Models\Enrollment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -35,4 +36,10 @@ Route::middleware('node.jwt')->prefix('app')->group(function () {
         'id' => $request->user()->id,
         'name' => $request->user()->name,
     ]));
+
+    // Only the signed-in student's own enrollments, never anyone else's.
+    Route::get('/enrollments', fn (Request $request) => Enrollment::where('user_id', $request->user()->id)
+        ->join('courses', 'courses.id', '=', 'enrollments.course_id')
+        ->orderBy('enrollments.id')
+        ->get(['enrollments.id', 'courses.title as course', 'enrollments.status']));
 });
