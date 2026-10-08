@@ -57,7 +57,7 @@ jobs:
         run: docker compose build
 
       - name: Run the PHP tests inside the container
-        run: docker compose run --rm --no-deps -e DB_DATABASE=:memory: app php artisan test
+        run: "docker compose run --rm --no-deps -e DB_DATABASE=:memory: app php artisan test"
 
       - name: Start the stack
         run: docker compose up -d
