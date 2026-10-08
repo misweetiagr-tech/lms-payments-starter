@@ -65,10 +65,21 @@ jobs:
       - name: Smoke test through the containers
         run: |
           for port in 8000 4000 5173; do for i in $(seq 1 40); do curl -s -o /dev/null http://localhost:$port/ && break; sleep 2; done; done
-          curl -sf http://localhost:8000/up
-          TOKEN=$(curl -sf -X POST http://localhost:4000/auth/login -H 'Content-Type: application/json' -d '{"user_id":3,"otp":"123456"}' | sed 's/.*"access_token":"\([^"]*\)".*/\1/')
-          curl -sf http://localhost:8000/api/app/me -H "Authorization: Bearer $TOKEN"
-          curl -sf http://localhost:5173/api/app/me -H "Authorization: Bearer $TOKEN"
+
+          # check <label> <expected status> <curl args...>: print the real status and body, fail clearly.
+          check() {
+            label="$1"; expected="$2"; shift 2
+            status=$(curl -s -o /tmp/body -w "%{http_code}" "$@")
+            echo "$label -> $status $(head -c 200 /tmp/body | tr -d '\n')"
+            [ "$status" = "$expected" ] || { echo "FAILED: $label expected $expected"; exit 1; }
+          }
+
+          check "laravel health" 200 http://localhost:8000/up
+          check "node login" 200 -X POST http://localhost:4000/auth/login -H 'Content-Type: application/json' -d '{"user_id":3,"otp":"123456"}'
+          TOKEN=$(sed 's/.*"access_token":"\([^"]*\)".*/\1/' /tmp/body)
+          check "laravel me with token" 200 http://localhost:8000/api/app/me -H "Authorization: Bearer $TOKEN"
+          check "laravel me without token" 401 http://localhost:8000/api/app/me -H 'Accept: application/json'
+          check "react proxy to laravel" 200 http://localhost:5173/api/app/me -H "Authorization: Bearer $TOKEN"
 
       - name: Show logs on failure
         if: failure()
