@@ -85,4 +85,4 @@ jobs:
         if: failure()
         run: |
           docker compose logs --tail=80
-          docker compose exec -T app sh -c 'tail -n 40 storage/logs/laravel.log | cut -c1-400' || true
+          docker compose exec -T app sh -c 'grep -E "^\[20" storage/logs/laravel.log | tail -3 | cut -c1-600' || true
